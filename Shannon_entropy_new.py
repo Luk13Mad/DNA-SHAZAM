@@ -92,6 +92,28 @@ def get_position(windows,k):
         position_raw.update({w:tmp})
     return position_raw
 
+def get_meth_position(windows):
+    '''
+    returns position of methylated Cytosine
+    
+    Parameters
+    ----------
+    seq: a string
+    k: length of the kmer
+
+    Returns
+    -------
+    dict
+    '''
+    position_raw={}
+    for w in ["C"]:
+        tmp=[]
+        ite=re.finditer(r"(?={})".format(w),windows)
+        for i in ite:
+            tmp.append(int(i.start())+1)
+        position_raw.update({w:tmp})
+    return position_raw
+
 def calc_alpha(position):
     '''
     returns alpha value for each found kmer
@@ -249,15 +271,30 @@ def print_result(df,name):
             df_res.to_csv("{1}/{0}.csv.gz".format(name,args["output"]),sep="\t",header=False,index=True, compression='gzip',mode="a+")
     print("{0} windows generated for read {1}".format(max(df_res["window"])+1,name),file=sys.stderr)
     
+def process_meth_pattern(series):
+    met1=series.apply(get_meth_position)
+    met2=met1.apply(calc_alpha)
+    del met1
+    met3=met2.apply(calc_beta)
+    del met2
+    met4=met3.apply(calc_q)
+    del met3
+    met5=met4.apply(shannon_entropy)
+    del met4
+    met6=met5.apply(process)
+    print(met6,file=sys.stderr)
+
+    
 def main(raw):
     read=str(raw.seq).strip()
     name=raw.id
     tmp=[]
-    for w in window(read,args["window"]):
+    for w in window(read.upper(),args["window"]):
         tmp.append(w.strip())
     Windows=pd.Series(tmp).rename(name)
     del tmp
     df=pd.DataFrame({"windows":Windows})
+    process_meth_pattern(Windows)
     for k in range(3,args["kmer"]):
         temp1=Windows.apply(get_position,k=k)
         temp2=temp1.apply(calc_alpha)
@@ -279,7 +316,7 @@ def main(raw):
 possible_kmers=generate_possible_kmers(args["kmer"])
 generator_reads=SeqIO.parse(args["input"],"fasta")#generator returning reads
 
-with cf.ProcessPoolExecutor(max_workers=args["nproc"]) as executor:#starting multiple sub-process
+with cf.ProcessPoolExecutor(max_workers=args["nproc"]) as executor:#starting multiple sub-processes
     for r in executor.map(main,generator_reads):
         pass
 
