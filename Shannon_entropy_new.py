@@ -294,7 +294,10 @@ def print_result(df,name):
             df_res=pd.DataFrame.from_dict(row[k],columns=['entropy'],orient='index')
             df_res["length"]=np.repeat(len(list(row[k].keys())[0]),len(row[k]))
             df_res["window"]=np.repeat(index,len(row[k]))
-            df_res.to_csv("{1}/{0}.csv.gz".format(name,args["output"]),sep="\t",header=False,index=True, compression='gzip',mode="a+")
+            if args["meth"]=="Y":
+                df_res.to_csv("{1}/{0}_meth.csv.gz".format(name,args["output"]),sep="\t",header=False,index=True, compression='gzip',mode="a+")
+            else:
+                df_res.to_csv("{1}/{0}.csv.gz".format(name,args["output"]),sep="\t",header=False,index=True, compression='gzip',mode="a+")
     print("{0} windows generated for read {1}".format(max(df_res["window"])+1,name),file=sys.stderr)
     
 def process_meth_pattern(series):
