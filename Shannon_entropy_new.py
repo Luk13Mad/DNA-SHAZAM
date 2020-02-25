@@ -11,6 +11,7 @@ import concurrent.futures as cf
 
 parser = argparse.ArgumentParser(description='generate kmers')
 parser.add_argument('-in',"--input", type=str,help='input FASTA-file, full path',required=True)
+parser.add_argument('-m',"--meth", type=str,help='consider Cm5 methylation Y/N',required=True)
 parser.add_argument('-out',"--output", type=str,help='output directory',default=os.getcwd())
 parser.add_argument('-w',"--window", type=int,help='scan window size, default 150',default=150)
 parser.add_argument('-k',"--kmer", type=int,help='max length of kmers to be generated e.g. if you want max kmer-size=13 pass -k 14',default=4)
@@ -253,6 +254,31 @@ def process(H):
         if H[w]!="NA":
             H[w]=H[w][0]
     return H
+
+def transform_with_meth(H,meth):
+    '''
+    transforms H values with meth H value
+    
+    Parameters
+    ----------
+    H: a dict with the H value for each found kmer
+    
+    Returns
+    -------
+    dict
+    '''
+    if args["meth"]=="Y":
+        factor=meth.iloc[H.name]["C"]
+        H=H[0]
+        for w in H.keys():
+            if H[w]!="NA":
+                H[w]=H[w]*factor
+            else:
+                pass
+        return H
+    else:
+        H=H[0]
+        return H
     
 def print_result(df,name):
     '''
@@ -282,19 +308,27 @@ def process_meth_pattern(series):
     met5=met4.apply(shannon_entropy)
     del met4
     met6=met5.apply(process)
-    print(met6,file=sys.stderr)
-
+    return met6
     
 def main(raw):
     read=str(raw.seq).strip()
     name=raw.id
+    
     tmp=[]
     for w in window(read.upper(),args["window"]):
         tmp.append(w.strip())
     Windows=pd.Series(tmp).rename(name)
     del tmp
+    
+    tmp_meth=[]
+    for w in window(read,args["window"]):
+        tmp_meth.append(w.strip())
+    Meth_Windows=pd.Series(tmp_meth).rename(name+"_meth")
+    del tmp_meth
+    
     df=pd.DataFrame({"windows":Windows})
-    process_meth_pattern(Windows)
+    met_entropy=process_meth_pattern(Meth_Windows)
+    
     for k in range(3,args["kmer"]):
         temp1=Windows.apply(get_position,k=k)
         temp2=temp1.apply(calc_alpha)
@@ -309,8 +343,9 @@ def main(raw):
         del temp5
         temp7=temp6.apply(process)
         del temp6
-        df[k]=temp7.values
+        temp8=temp7.to_frame().apply(transform_with_meth,axis=1,meth=met_entropy)
         del temp7
+        df[k]=temp8.values
     print_result(df,name)
     
 possible_kmers=generate_possible_kmers(args["kmer"])
