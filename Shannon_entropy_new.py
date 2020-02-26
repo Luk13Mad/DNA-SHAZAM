@@ -251,8 +251,9 @@ def process(H):
     dict
     '''
     for w in H.keys():
-        if H[w]!="NA":
-            H[w]=H[w][0]
+        if H[w]:
+            if H[w]!="NA":
+                H[w]=H[w][0]
     return H
 
 def transform_with_meth(H,meth):
