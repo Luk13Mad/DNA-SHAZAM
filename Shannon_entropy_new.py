@@ -255,6 +255,28 @@ def process(H):
             if H[w]!="NA":
                 H[w]=H[w][0]
     return H
+    
+def process_meth(H):
+    '''
+    gets rid of not needed value
+    
+    Parameters
+    ----------
+    H: a dict with the H value for each found kmer
+    
+    Returns
+    -------
+    dict
+    '''
+    for w in H.keys():
+        if H[w]:
+            if H[w]!="NA":
+                H[w]=H[w][0]
+        elif H[w]=="NA":
+            pass
+        else:
+            H[w]=1
+    return H
 
 def transform_with_meth(H,meth):
     '''
@@ -311,7 +333,7 @@ def process_meth_pattern(series):
     del met3
     met5=met4.apply(shannon_entropy)
     del met4
-    met6=met5.apply(process)
+    met6=met5.apply(process_meth)
     return met6
     
 def main(raw):
