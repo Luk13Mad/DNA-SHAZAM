@@ -3,7 +3,7 @@ prototype of adaptation of the Shazam algorithm for DNA
 
 FASTA files of mtDNA can for example be obtained from MITOMAP database (https://www.mitomap.org) 
 
-implementation in rust as command line tool pending
+implementation in rust as command line tool [here](https://github.com/Luk13Mad/dnasr)
 
 -----------------------------------------------------------
 to run on a FASTA file with methylated data execute:
